@@ -1,0 +1,104 @@
+import tkinter as tk
+from tkinter import messagebox
+import json
+import os
+
+FILE = "books.json"
+books = []
+
+def load_books():
+    global books
+    if os.path.exists(FILE):
+        with open(FILE, "r", encoding="utf-8") as f:
+            books = json.load(f)
+
+def save_books():
+    with open(FILE, "w", encoding="utf-8") as f:
+        json.dump(books, f, ensure_ascii=False, indent=4)
+
+def add_book():
+    title = title_entry.get()
+    author = author_entry.get()
+    genre = genre_entry.get()
+    pages = pages_entry.get()
+
+    if not title or not author or not genre or not pages:
+        messagebox.showerror("Ошибка", "Заполните все поля")
+        return
+
+    if not pages.isdigit():
+        messagebox.showerror("Ошибка", "Количество страниц должно быть числом")
+        return
+
+    book = {
+        "title": title,
+        "author": author,
+        "genre": genre,
+        "pages": int(pages)
+    }
+
+    books.append(book)
+    save_books()
+    update_list()
+
+def update_list(filtered=None):
+    listbox.delete(0, tk.END)
+    data = filtered if filtered else books
+
+    for b in data:
+        listbox.insert(tk.END, f"{b['title']} | {b['author']} | {b['genre']} | {b['pages']} стр.")
+
+# --- GUI ---
+root = tk.Tk()
+root.title("Book Tracker")
+
+tk.Label(root, text="Страниц больше чем").pack()
+
+pages_filter_entry = tk.Entry(root)
+pages_filter_entry.pack()
+
+def filter_books():
+    genre = filter_entry.get().lower()
+    pages = pages_filter_entry.get()
+
+    filtered = books
+
+    if genre:
+        filtered = [b for b in filtered if genre in b["genre"].lower()]
+
+    if pages.isdigit():
+        filtered = [b for b in filtered if b["pages"] > int(pages)]
+
+    update_list(filtered)
+
+tk.Label(root, text="Название книги").pack()
+title_entry = tk.Entry(root)
+title_entry.pack()
+
+tk.Label(root, text="Автор").pack()
+author_entry = tk.Entry(root)
+author_entry.pack()
+
+tk.Label(root, text="Жанр").pack()
+genre_entry = tk.Entry(root)
+genre_entry.pack()
+
+tk.Label(root, text="Страницы").pack()
+pages_entry = tk.Entry(root)
+pages_entry.pack()
+
+tk.Button(root, text="Добавить книгу", command=add_book).pack()
+
+tk.Label(root, text="Фильтр по жанру").pack()
+filter_entry = tk.Entry(root)
+filter_entry.pack()
+
+tk.Button(root, text="Фильтр", command=filter_books).pack()
+
+listbox = tk.Listbox(root, width=60)
+listbox.pack()
+
+load_books()
+update_list()
+
+root.mainloop()
